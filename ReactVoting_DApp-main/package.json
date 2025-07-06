@@ -1,17 +1,16 @@
 {
   "name": "web3-dapp-using-react-and-solidity",
   "version": "1.0.0",
-  "description": "A simple Web3 DApp using React and Solidity",
+  "description": "A Web3 DApp using React and Solidity",
   "main": "index.js",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "migrate": "truffle migrate",
-    "compile": "truffle compile"
+    "compile": "truffle compile",
+    "migrate": "truffle migrate"
   },
-  "keywords": [],
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
@@ -37,3 +36,4 @@
     ]
   }
 }
+
