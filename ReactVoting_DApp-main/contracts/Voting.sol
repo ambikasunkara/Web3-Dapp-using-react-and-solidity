@@ -1,64 +1,68 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 contract Voting {
+    address public admin;
+    uint public electionEndTime;
+    bool public electionStarted;
+
     struct Candidate {
         string name;
-        uint256 voteCount;
+        uint voteCount;
     }
 
+    mapping(address => bool) public hasVoted;
     Candidate[] public candidates;
-    address owner;
-    mapping(address => bool) public voters;
 
-    uint256 public votingStart;
-    uint256 public votingEnd;
-
-constructor(string[] memory _candidateNames, uint256 _durationInMinutes) {
-    for (uint256 i = 0; i < _candidateNames.length; i++) {
-        candidates.push(Candidate({
-            name: _candidateNames[i],
-            voteCount: 0
-        }));
+    constructor() {
+        admin = msg.sender;
     }
-    owner = msg.sender;
-    votingStart = block.timestamp;
-    votingEnd = block.timestamp + (_durationInMinutes * 1 minutes);
-}
 
-    modifier onlyOwner {
-        require(msg.sender == owner);
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Only admin can do this.");
         _;
     }
 
-    function addCandidate(string memory _name) public onlyOwner {
-        candidates.push(Candidate({
-                name: _name,
-                voteCount: 0
-        }));
+    modifier electionActive() {
+        require(electionStarted, "Election not started.");
+        require(block.timestamp < electionEndTime, "Election ended.");
+        _;
     }
 
-    function vote(uint256 _candidateIndex) public {
-        require(!voters[msg.sender], "You have already voted.");
-        require(_candidateIndex < candidates.length, "Invalid candidate index.");
+    function startElection(string[] memory candidateNames, uint durationInMinutes) public onlyAdmin {
+        require(!electionStarted, "Election already started.");
 
-        candidates[_candidateIndex].voteCount++;
-        voters[msg.sender] = true;
+        for (uint i = 0; i < candidateNames.length; i++) {
+            candidates.push(Candidate(candidateNames[i], 0));
+        }
+
+        electionEndTime = block.timestamp + (durationInMinutes * 1 minutes);
+        electionStarted = true;
     }
 
-    function getAllVotesOfCandiates() public view returns (Candidate[] memory){
+    function vote(uint candidateIndex) public electionActive {
+        require(!hasVoted[msg.sender], "You have already voted.");
+        require(candidateIndex < candidates.length, "Invalid candidate index.");
+
+        candidates[candidateIndex].voteCount++;
+        hasVoted[msg.sender] = true;
+    }
+
+    function getRemainingTime() public view returns (uint) {
+        if (block.timestamp >= electionEndTime) return 0;
+        return electionEndTime - block.timestamp;
+    }
+
+    function getAllVotesOfCandidates() public view returns (Candidate[] memory) {
+        require(electionStarted, "Election has not started yet.");
         return candidates;
     }
 
-    function getVotingStatus() public view returns (bool) {
-        return (block.timestamp >= votingStart && block.timestamp < votingEnd);
+    function getCandidateCount() public view returns (uint) {
+        return candidates.length;
     }
 
-    function getRemainingTime() public view returns (uint256) {
-        require(block.timestamp >= votingStart, "Voting has not started yet.");
-        if (block.timestamp >= votingEnd) {
-            return 0;
-    }
-        return votingEnd - block.timestamp;
+    function hasUserVoted(address user) public view returns (bool) {
+        return hasVoted[user];
     }
 }
